@@ -42,18 +42,27 @@ export class Dashboard {
   }
 
   async load() {
+    console.log("📊 Starting dashboard load...");
     try {
       await this.loadDashboardData();
+      console.log("✅ Dashboard data loaded successfully");
       this.startAutoRefresh();
+      console.log("✅ Dashboard auto-refresh started");
     } catch (error) {
-      console.error("Dashboard load error:", error);
+      console.error("❌ Dashboard load error:", error);
+      console.error("📊 Dashboard error details:", {
+        message: error.message,
+        stack: error.stack,
+      });
       this.ui.showToast("error", "Failed to load dashboard data");
     }
   }
 
   async loadDashboardData() {
+    console.log("📡 Loading dashboard data from API...");
     try {
       const data = await this.api.getDashboardAnalytics();
+      console.log("✅ Dashboard API response received:", data);
 
       this.updateStats(data.user);
       this.updateTodayData(data.today);
@@ -61,9 +70,10 @@ export class Dashboard {
       this.updateGoals(data.goals.active);
       this.updateRecentActivity(data.recentActivity);
       this.updateChart();
+      console.log("✅ Dashboard UI updated successfully");
     } catch (error) {
       // Fallback to demo data if API fails
-      console.warn("Using demo data for dashboard");
+      console.warn("⚠️ Dashboard API failed, using demo data:", error.message);
       this.loadDemoData();
     }
   }

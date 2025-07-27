@@ -112,7 +112,7 @@ export class Analytics {
     this.charts.category = new Chart(ctx, {
       type: "doughnut",
       data: {
-        labels: ["Backend", "Frontend", "DSA", "System Design"],
+        labels: ["Backend", "Frontend", "Data Structures & Algorithms", "System Design"],
         datasets: [
           {
             data: [35, 25, 25, 15],

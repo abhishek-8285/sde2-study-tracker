@@ -12,7 +12,9 @@
     "dev:frontend": "webpack serve --mode development",
     "setup": "npm run create-admin && npm run seed-data",
     "create-admin": "node server/scripts/createAdmin.js",
-    "seed-data": "node server/scripts/seedData.js"
+    "seed-data": "node server/scripts/seedData.js",
+    "import-learning": "node server/scripts/importLearningContent.js",
+    "full-setup": "npm run create-admin && npm run import-learning"
   },
   "keywords": [
     "study",

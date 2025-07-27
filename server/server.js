@@ -15,9 +15,11 @@ const topicRoutes = require("./routes/topics");
 const sessionRoutes = require("./routes/sessions");
 const analyticsRoutes = require("./routes/analytics");
 const goalRoutes = require("./routes/goals");
+const contentRoutes = require("./routes/content");
+const bookmarkRoutes = require("./routes/bookmarks");
 
 // Import middleware
-const authMiddleware = require("./middleware/auth");
+const { auth } = require("./middleware/auth");
 
 const app = express();
 const server = http.createServer(app);
@@ -70,11 +72,13 @@ mongoose
 
 // API Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/users", authMiddleware, userRoutes);
-app.use("/api/topics", authMiddleware, topicRoutes);
-app.use("/api/sessions", authMiddleware, sessionRoutes);
-app.use("/api/analytics", authMiddleware, analyticsRoutes);
-app.use("/api/goals", authMiddleware, goalRoutes);
+app.use("/api/users", auth, userRoutes);
+app.use("/api/topics", auth, topicRoutes);
+app.use("/api/sessions", auth, sessionRoutes);
+app.use("/api/analytics", auth, analyticsRoutes);
+app.use("/api/goals", auth, goalRoutes);
+app.use("/api/content", contentRoutes);
+app.use("/api/bookmarks", bookmarkRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
