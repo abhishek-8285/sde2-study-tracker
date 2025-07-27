@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDE2+ Study Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333; min-height: 100vh; 
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .header { 
+            background: rgba(255,255,255,0.95); border-radius: 12px; 
+            padding: 2rem; margin-bottom: 2rem; text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .header h1 { color: #667eea; font-size: 2.5rem; margin-bottom: 1rem; }
+        .stats { display: flex; justify-content: center; gap: 3rem; margin-top: 1rem; }
+        .stat { text-align: center; }
+        .stat-value { display: block; font-size: 2rem; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 0.9rem; color: #666; text-transform: uppercase; }
+        
+        .tabs { 
+            display: flex; gap: 1rem; margin-bottom: 2rem; 
+            background: rgba(255,255,255,0.9); border-radius: 12px; padding: 1rem;
+        }
+        .tab-btn { 
+            background: none; border: none; padding: 1rem 2rem; border-radius: 8px;
+            cursor: pointer; font-weight: 600; transition: all 0.3s ease;
+        }
+        .tab-btn.active { background: #667eea; color: white; }
+        .tab-btn:hover { background: rgba(102,126,234,0.1); }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .card { 
+            background: rgba(255,255,255,0.95); border-radius: 12px; padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: transform 0.3s ease;
+        }
+        .card:hover { transform: translateY(-2px); }
+        .card h3 { color: #333; margin-bottom: 1rem; }
+        
+        .topic-item { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 0.5rem;
+        }
+        .topic-name { font-weight: 600; }
+        .topic-status { 
+            padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem;
+            font-weight: 600; text-transform: uppercase;
+        }
+        .status-not-started { background: #e9ecef; color: #6c757d; }
+        .status-in-progress { background: #fff3cd; color: #856404; }
+        .status-completed { background: #d4edda; color: #155724; }
+        
+        .progress-bar { 
+            width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; 
+            overflow: hidden; margin: 0.5rem 0;
+        }
+        .progress-fill { 
+            height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); 
+            transition: width 0.3s ease;
+        }
+        
+        .btn { 
+            background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem;
+            border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;
+        }
+        .btn:hover { background: #5a6fd8; transform: translateY(-1px); }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
+        
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content { 
+            background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { 
+            width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;
+        }
+        
+        .timer { 
+            text-align: center; padding: 2rem; background: rgba(255,255,255,0.95); 
+            border-radius: 12px; margin-bottom: 2rem;
+        }
+        .timer-display { font-size: 3rem; font-weight: bold; color: #667eea; margin-bottom: 1rem; }
+        .timer-controls { display: flex; gap: 1rem; justify-content: center; }
+        
+        @media (max-width: 768px) {
+            .stats { flex-direction: column; gap: 1rem; }
+            .tabs { flex-direction: column; }
+            .timer-display { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎓 SDE2+ Study Tracker</h1>
+            <p>Track your journey to Senior Software Engineer excellence</p>
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-value" id="totalProgress">0%</span>
+                    <span class="stat-label">Overall Progress</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="studyStreak">0</span>
+                    <span class="stat-label">Day Streak</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="hoursToday">0h</span>
+                    <span class="stat-label">Hours Today</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('topics')">📚 Topics</button>
+            <button class="tab-btn" onclick="switchTab('dsa')">💻 DSA</button>
+            <button class="tab-btn" onclick="switchTab('timer')">⏱️ Timer</button>
+            <button class="tab-btn" onclick="switchTab('analytics')">📈 Analytics</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h3>🎯 Today's Focus</h3>
+                    <div id="todaysFocus">
+                        <div class="topic-item">
+                            <span>Complete Spring Boot Fundamentals</span>
+                            <input type="checkbox" onchange="updateProgress()">
+                        </div>
+                        <div class="topic-item">
+                            <span>Solve 5 DSA problems</span>
+                            <input type="checkbox" onchange="updateProgress()">
+                        </div>
+                        <div class="topic-item">
+                            <span>Review React Hooks</span>
+                            <input type="checkbox" onchange="updateProgress()">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="addFocusItem()">➕ Add Item</button>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Progress by Category</h3>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Backend Development</span>
+                            <span>65%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 65%"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Frontend Development</span>
+                            <span>45%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 45%"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Data Structures & Algorithms</span>
+                            <span>30%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 30%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>System Design</span>
+                            <span>20%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 20%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📅 This Week's Goals</h3>
+                    <div id="weeklyGoals">
+                        <div class="topic-item">
+                            <span>Complete 3 backend topics</span>
+                            <span class="topic-status status-in-progress">In Progress</span>
+                        </div>
+                        <div class="topic-item">
+                            <span>Study 25 hours total</span>
+                            <span class="topic-status status-in-progress">In Progress</span>
+                        </div>
+                        <div class="topic-item">
+                            <span>Finish Task Management project</span>
+                            <span class="topic-status status-not-started">Not Started</span>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="addWeeklyGoal()">➕ Add Goal</button>
+                </div>
+                
+                <div class="card">
+                    <h3>🔄 Upcoming Revisions</h3>
+                    <div id="upcomingRevisions">
+                        <div class="topic-item">
+                            <span>Java Fundamentals</span>
+                            <span>Tomorrow</span>
+                        </div>
+                        <div class="topic-item">
+                            <span>SQL Basics</span>
+                            <span>In 3 days</span>
+                        </div>
+                        <div class="topic-item">
+                            <span>React Hooks</span>
+                            <span>Next week</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Topics Tab -->
+        <div id="topics" class="tab-content">
+            <div class="card">
+                <h3>📚 Learning Topics</h3>
+                <div style="margin-bottom: 1rem;">
+                    <select id="categoryFilter" onchange="filterTopics()">
+                        <option value="all">All Categories</option>
+                        <option value="backend">Backend</option>
+                        <option value="frontend">Frontend</option>
+                        <option value="security">Security</option>
+                        <option value="devops">DevOps</option>
+                    </select>
+                </div>
+                <div id="topicsList">
+                    <div class="topic-item" onclick="openTopicModal('spring-boot')">
+                        <div>
+                            <div class="topic-name">Spring Boot Fundamentals</div>
+                            <small>Backend • 8 hours estimated</small>
+                        </div>
+                        <span class="topic-status status-in-progress">In Progress</span>
+                    </div>
+                    <div class="topic-item" onclick="openTopicModal('react-hooks')">
+                        <div>
+                            <div class="topic-name">React Hooks</div>
+                            <small>Frontend • 6 hours estimated</small>
+                        </div>
+                        <span class="topic-status status-completed">Completed</span>
+                    </div>
+                    <div class="topic-item" onclick="openTopicModal('sql-basics')">
+                        <div>
+                            <div class="topic-name">SQL Fundamentals</div>
+                            <small>Database • 10 hours estimated</small>
+                        </div>
+                        <span class="topic-status status-not-started">Not Started</span>
+                    </div>
+                    <div class="topic-item" onclick="openTopicModal('jwt-auth')">
+                        <div>
+                            <div class="topic-name">JWT Authentication</div>
+                            <small>Security • 8 hours estimated</small>
+                        </div>
+                        <span class="topic-status status-not-started">Not Started</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DSA Tab -->
+        <div id="dsa" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>🌱 Easy Problems</h3>
+                    <div class="topic-item">
+                        <span>Arrays & Strings</span>
+                        <span class="topic-status status-completed">5/6 Complete</span>
+                    </div>
+                    <div class="topic-item">
+                        <span>Two Pointers</span>
+                        <span class="topic-status status-in-progress">3/5 Complete</span>
+                    </div>
+                    <div class="topic-item">
+                        <span>Hash Maps & Sets</span>
+                        <span class="topic-status status-not-started">0/8 Complete</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🌳 Medium Problems</h3>
+                    <div class="topic-item">
+                        <span>Binary Search</span>
+                        <span class="topic-status status-in-progress">2/7 Complete</span>
+                    </div>
+                    <div class="topic-item">
+                        <span>Dynamic Programming</span>
+                        <span class="topic-status status-not-started">0/10 Complete</span>
+                    </div>
+                    <div class="topic-item">
+                        <span>Trees & Graphs</span>
+                        <span class="topic-status status-not-started">0/12 Complete</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🏔️ Hard Problems</h3>
+                    <div class="topic-item">
+                        <span>Advanced DP</span>
+                        <span class="topic-status status-not-started">0/8 Complete</span>
+                    </div>
+                    <div class="topic-item">
+                        <span>System Design</span>
+                        <span class="topic-status status-not-started">0/5 Complete</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timer Tab -->
+        <div id="timer" class="tab-content">
+            <div class="timer">
+                <div class="timer-display" id="timerDisplay">25:00</div>
+                <div class="timer-controls">
+                    <button class="btn" id="startBtn" onclick="startTimer()">▶️ Start</button>
+                    <button class="btn btn-secondary" id="pauseBtn" onclick="pauseTimer()" style="display: none;">⏸️ Pause</button>
+                    <button class="btn btn-secondary" onclick="resetTimer()">🔄 Reset</button>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <label>Session Length: </label>
+                    <select id="sessionLength" onchange="updateTimerLength()">
+                        <option value="25">25 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">60 minutes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Today's Sessions</h3>
+                <div id="todaySessions">
+                    <div class="topic-item">
+                        <span>Spring Boot Study</span>
+                        <span>25 minutes</span>
+                    </div>
+                    <div class="topic-item">
+                        <span>React Practice</span>
+                        <span>30 minutes</span>
+                    </div>
+                    <div class="topic-item">
+                        <span>DSA Problems</span>
+                        <span>45 minutes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>📈 Study Statistics</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #667eea;">127h</div>
+                            <div>Total Hours</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #667eea;">23</div>
+                            <div>Topics Completed</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #667eea;">4.2h</div>
+                            <div>Daily Average</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #667eea;">12</div>
+                            <div>Current Streak</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>⏰ Study Time by Category</h3>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Backend Development</span>
+                            <span>45h</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 70%"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Frontend Development</span>
+                            <span>32h</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Data Structures & Algorithms</span>
+                            <span>28h</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 45%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>System Design</span>
+                            <span>22h</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 35%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topic Modal -->
+    <div id="topicModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Topic Progress</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="topicStatus">
+                    <option value="not-started">Not Started</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Progress (%)</label>
+                <input type="range" id="topicProgress" min="0" max="100" value="0" oninput="updateProgressDisplay()">
+                <span id="progressDisplay">0%</span>
+            </div>
+            <div class="form-group">
+                <label>Time Spent (hours)</label>
+                <input type="number" id="timeSpent" step="0.5" min="0">
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea id="topicNotes" rows="3"></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn" onclick="saveTopicProgress()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentTab = 'dashboard';
+        let timerInterval = null;
+        let timerMinutes = 25;
+        let timerSeconds = 0;
+        let isTimerRunning = false;
+        let currentTopic = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            loadData();
+        });
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            currentTab = tabName;
+        }
+
+        // Timer functions
+        function startTimer() {
+            if (isTimerRunning) return;
+            
+            isTimerRunning = true;
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            
+            timerInterval = setInterval(() => {
+                if (timerSeconds === 0) {
+                    if (timerMinutes === 0) {
+                        timerComplete();
+                        return;
+                    }
+                    timerMinutes--;
+                    timerSeconds = 59;
+                } else {
+                    timerSeconds--;
+                }
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').style.display = 'none';
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timerMinutes = parseInt(document.getElementById('sessionLength').value);
+            timerSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timerDisplay');
+            const mins = timerMinutes.toString().padStart(2, '0');
+            const secs = timerSeconds.toString().padStart(2, '0');
+            display.textContent = `${mins}:${secs}`;
+        }
+
+        function updateTimerLength() {
+            if (!isTimerRunning) {
+                resetTimer();
+            }
+        }
+
+        function timerComplete() {
+            pauseTimer();
+            alert('🎉 Session completed! Great work!');
+            
+            // Add to today's sessions
+            const sessionList = document.getElementById('todaySessions');
+            const newSession = document.createElement('div');
+            newSession.className = 'topic-item';
+            newSession.innerHTML = `
+                <span>Study Session</span>
+                <span>${document.getElementById('sessionLength').value} minutes</span>
+            `;
+            sessionList.appendChild(newSession);
+            
+            updateStats();
+        }
+
+        // Topic modal functions
+        function openTopicModal(topicId) {
+            currentTopic = topicId;
+            document.getElementById('topicModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('topicModal').classList.remove('active');
+        }
+
+        function updateProgressDisplay() {
+            const progress = document.getElementById('topicProgress').value;
+            document.getElementById('progressDisplay').textContent = progress + '%';
+        }
+
+        function saveTopicProgress() {
+            const status = document.getElementById('topicStatus').value;
+            const progress = document.getElementById('topicProgress').value;
+            const timeSpent = document.getElementById('timeSpent').value;
+            const notes = document.getElementById('topicNotes').value;
+            
+            // Save to localStorage (simple implementation)
+            const topicData = {
+                status: status,
+                progress: progress,
+                timeSpent: timeSpent,
+                notes: notes,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            localStorage.setItem(`topic_${currentTopic}`, JSON.stringify(topicData));
+            
+            closeModal();
+            alert('Progress saved!');
+            updateStats();
+        }
+
+        // Focus and goal functions
+        function addFocusItem() {
+            const item = prompt('Enter a focus item for today:');
+            if (item) {
+                const container = document.getElementById('todaysFocus');
+                const newItem = document.createElement('div');
+                newItem.className = 'topic-item';
+                newItem.innerHTML = `
+                    <span>${item}</span>
+                    <input type="checkbox" onchange="updateProgress()">
+                `;
+                container.appendChild(newItem);
+            }
+        }
+
+        function addWeeklyGoal() {
+            const goal = prompt('Enter a weekly goal:');
+            if (goal) {
+                const container = document.getElementById('weeklyGoals');
+                const newGoal = document.createElement('div');
+                newGoal.className = 'topic-item';
+                newGoal.innerHTML = `
+                    <span>${goal}</span>
+                    <span class="topic-status status-not-started">Not Started</span>
+                `;
+                container.appendChild(newGoal);
+            }
+        }
+
+        // Data functions
+        function updateProgress() {
+            // Update overall progress
+            updateStats();
+        }
+
+        function updateStats() {
+            // Simple progress calculation
+            const completedItems = document.querySelectorAll('#todaysFocus input:checked').length;
+            const totalItems = document.querySelectorAll('#todaysFocus input').length;
+            const progressPercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+            
+            document.getElementById('totalProgress').textContent = progressPercent + '%';
+            
+            // Update hours today based on completed timer sessions
+            const sessions = document.querySelectorAll('#todaySessions .topic-item').length;
+            document.getElementById('hoursToday').textContent = (sessions * 0.5).toFixed(1) + 'h';
+            
+            // Simple streak calculation
+            const streak = localStorage.getItem('studyStreak') || 0;
+            document.getElementById('studyStreak').textContent = streak;
+        }
+
+        function loadData() {
+            // Load any saved data from localStorage
+            updateStats();
+        }
+
+        function filterTopics() {
+            // Filter topics based on category (simplified implementation)
+            const filter = document.getElementById('categoryFilter').value;
+            // Implementation would filter the topics list
+        }
+
+        // Export data functionality
+        function exportData() {
+            const data = {
+                topics: {},
+                sessions: [],
+                goals: [],
+                exportDate: new Date().toISOString()
+            };
+            
+            // Collect data from localStorage
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('topic_')) {
+                    data.topics[key] = JSON.parse(localStorage.getItem(key));
+                }
+            }
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sde2-study-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Add export button to page
+        document.querySelector('.header').innerHTML += `
+            <div style="margin-top: 1rem;">
+                <button class="btn btn-secondary" onclick="exportData()">📥 Export Data</button>
+            </div>
+        `;
+    </script>
+</body>
+</html>
