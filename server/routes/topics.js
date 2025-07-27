@@ -1,8 +1,37 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const { Topic, UserProgress } = require("../models/Topic");
 const { auth, checkResourceOwnership } = require("../middleware/auth");
+const fs = require("fs");
+const path = require("path");
 
 const router = express.Router();
+
+// Learning content import endpoint for production
+router.post("/import", auth, async (req, res) => {
+  try {
+    console.log("🚀 Starting learning content import...");
+
+    // Import the script function
+    const importScript = require("../scripts/importLearningContent");
+
+    // Run the import
+    await importScript.runImport();
+
+    res.json({
+      success: true,
+      message: "Learning content imported successfully",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("❌ Import failed:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Failed to import learning content",
+    });
+  }
+});
 
 // @route   GET /api/topics
 // @desc    Get all topics with user progress (if authenticated)

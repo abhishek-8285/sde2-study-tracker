@@ -364,9 +364,30 @@ async function generateTopicStats() {
   });
 }
 
-// Run import if called directly
+// Main import function for API endpoint
+async function runImport() {
+  console.log("🚀 Starting learning content import via API...");
+
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/sde2-study-tracker");
+    console.log("✅ Connected to MongoDB for import");
+
+    await scanLearningDirectory();
+    await generateTopicStats();
+
+    console.log("\n🎓 Learning content import completed successfully!");
+    return { success: true, message: "Import completed" };
+  } catch (error) {
+    console.error("❌ Import failed:", error);
+    throw error;
+  }
+}
+
+// Direct execution when run as script
 if (require.main === module) {
-  importLearningContent()
+  mongoose
+    .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/sde2-study-tracker")
+    .then(() => scanLearningDirectory())
     .then(() => generateTopicStats())
     .then(() => {
       console.log("\n🎓 Ready to start your learning journey!");
@@ -378,4 +399,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { importLearningContent, LEARNING_CONTENT_MAP };
+module.exports = { importLearningContent, LEARNING_CONTENT_MAP, runImport };
