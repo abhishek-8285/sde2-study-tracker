@@ -5,8 +5,8 @@ const { auth } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Learning content base path
-const LEARNING_BASE_PATH = "/Users/abhishek.shrivastav/Desktop/learning";
+// Learning content base path - works in both local and production
+const LEARNING_BASE_PATH = path.resolve(__dirname, "../../learning");
 
 // Recursive function to find all markdown files in a directory
 function findMarkdownFilesRecursively(dirPath, relativePath = "") {

@@ -137,7 +137,7 @@ const LEARNING_CONTENT_MAP = {
 };
 
 async function scanLearningDirectory(dirPath) {
-  const learningPath = path.resolve(__dirname, "../../../learning");
+  const learningPath = path.resolve(__dirname, "../../learning");
 
   if (!fs.existsSync(learningPath)) {
     console.log("❌ Learning directory not found at:", learningPath);
